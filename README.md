@@ -12,7 +12,7 @@
 
 ###
 
-<p align="left"> 💼 Working on data analyst projects.<br> 📚 I'm currently learning more about the Python framework for data, and starting something in R.<br> ✨ About me: I'm always looking to learn more about new things and master the art of using data to provide useful insights.<br> 🎯 Goals: Currently searching for a data analyst position</p>
+<p align="left"> 💼 Working on data analyst projects.<br> 📚 I'm currently learning more about the Python framework for data, and starting something in R.<br> ✨ I'm always looking to learn more about new things and master the art of using data to provide useful insights.<br> 🎯 Goals: Currently searching for a data analyst position</p>
 
 ###
 
