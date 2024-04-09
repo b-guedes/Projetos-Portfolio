@@ -1,0 +1,792 @@
+# in Kaggle plataform -> https://www.kaggle.com/code/brunoguedesf/projeto-eda-delivery-center
+
+#trazer os arquivos CSV para o Pandas
+channels = pd.read_csv('/kaggle/input/brazilian-delivery-center/channels.csv')
+deliveries = pd.read_csv('/kaggle/input/brazilian-delivery-center/deliveries.csv')
+drivers = pd.read_csv('/kaggle/input/brazilian-delivery-center/drivers.csv')
+orders = pd.read_csv('/kaggle/input/brazilian-delivery-center/orders.csv')
+payments = pd.read_csv('/kaggle/input/brazilian-delivery-center/payments.csv')
+
+#esses arquivos precisaram passar por um Encoding diferente para detectar os dados com acentuação.
+hubs = pd.read_csv('/kaggle/input/brazilian-delivery-center/hubs.csv', encoding="ISO-8859-2")
+stores = pd.read_csv('/kaggle/input/brazilian-delivery-center/stores.csv', encoding="ISO-8859-2")
+
+
+ ### 1. PRE PROCESSING OF DATA ###
+
+#visualiza de maneira clara e breve os dados das tabelas criadas
+tabelas = {
+    'channels': channels, 'deliveries': deliveries, 'drivers':drivers,
+    'orders':orders, 'payments':payments, 'hubs': hubs, 'stores': stores
+}
+for tabela, df in tabelas.items():
+    print(colored(f'{tabela}:', 'blue', attrs=['bold']))
+    display(df.head(3))
+
+#visualiza a porcentagem de dados vazios
+for tabela, df in tabelas.items():
+    print(colored(f'{tabela}:', 'red', attrs=['bold']))
+    display(missing_data(df))
+
+#verifica o formato do dataset e se existem dados duplicados (linhas idênticas)
+for tabela, df in tabelas.items():
+    linhas_duplicadas = df[df.duplicated()]
+    print(f"Formato do Dataset {tabela}: {df.shape}\n", 
+          f"Número de linhas duplicadas: {linhas_duplicadas.shape}\n")
+
+#junta algumas das tabelas de interesse para facilitar a visualização
+# Processamento do dataframe 'deliveries'
+df_entregas = deliveries.dropna().astype({'driver_id': 'int64'})
+df_entregas = df_entregas.merge(drivers.set_index('driver_id'), on='driver_id')
+
+# Processamento do dataframe 'stores'
+df_lojas = stores.merge(hubs.set_index('hub_id'), on='hub_id', how='left')
+df_lojas = df_lojas.drop(columns=[
+    'store_latitude', 'store_longitude', 'hub_latitude',
+    'hub_longitude', 'hub_id', 'hub_state'])
+
+# Processamento do dataframe 'orders'
+df_pedidos = orders.astype({'order_moment_created': 'datetime64[s]'})
+df_pedidos = df_pedidos.drop(columns=[
+    'order_created_minute', 'order_created_hour', 'order_created_day',
+    'order_created_month', 'order_created_year', 'order_moment_accepted',
+    'order_moment_ready', 'order_moment_collected', 'order_moment_in_expedition',
+    'order_moment_delivering', 'order_moment_delivered', 'order_moment_finished',
+    'order_metric_collected_time', 'order_metric_paused_time',
+    'order_metric_production_time', 'order_metric_walking_time',
+    'order_metric_expediton_speed_time', 'order_metric_transit_time',
+    'order_metric_cycle_time'])
+df_pedidos = df_pedidos.merge(channels.set_index('channel_id'), on='channel_id')
+df_pedidos['data'] = df_pedidos['order_moment_created'].dt.strftime('%d-%m-%Y')
+df_pedidos['mes_ano'] = df_pedidos['order_moment_created'].dt.strftime('%m-%Y')
+df_pedidos['dia_semana'] = df_pedidos['order_moment_created'].dt.strftime('%A')
+df_pedidos = df_pedidos.drop(columns=['order_moment_created'])
+
+### 3. DATA EXPLORATORY ###
+### 3.1 UNIVARIED EXPLORATORY ###
+
+#### INFOS ABOUT THE DRIVERS ####
+
+# Charge the dataframe
+modal_df = count_by_column(df_entregas, 'driver_modal')
+driver_df = count_by_column(df_entregas, 'driver_type')
+
+# Plot the graphs
+fig, axs = plt.subplots(1, 2, figsize=(9, 4), sharey=True)
+
+# Plot the first bar chart
+axs[0].bar(x=modal_df['driver_modal'], height=modal_df['percentage'], color="orange")
+axs[0].set_title('Driver Modal')
+axs[0].set_ylabel('Percentage')
+
+# Plot the second bar chart
+axs[1].bar(x=driver_df['driver_type'], height=driver_df['percentage'], color="darkorange")
+axs[1].set_title('Driver Contract Type')
+plt.show()
+
+count_columns = ['driver_modal', 'driver_type', 'delivery_status']
+
+for column in count_columns:
+    print(colored(f'{column}:', 'blue', attrs=['bold']))
+    display(count_by_column(df_entregas, column))
+
+display(freq_column(df_entregas, 'delivery_distance_meters'))
+
+#### INFOS ABOUT THE STORES ####
+
+# Charge the dataframe
+segment_df = count_by_column(df_lojas, 'store_segment')
+
+# Plot the graph
+fig, ax = plt.subplots(figsize=(4.5, 3))
+ax.bar(x=segment_df['store_segment'], height=segment_df['percentage'], color=["darkorange", "orangered"])
+plt.ylabel('Percentage')
+plt.xlabel('Store Segment')
+plt.title('Stores per segment')
+plt.show()
+
+count_columns = ['hub_city', 'store_segment']
+
+for column in count_columns:
+    print(colored(f'{column}:', 'blue', attrs=['bold']))
+    display(count_by_column(df_lojas, column))
+
+# calculate frequency distribution
+result_df = df_lojas.groupby(['hub_city', 'store_segment'])['store_id'].count().reset_index()
+result_df.rename(columns={'store_id': 'occurrences'}, inplace=True)
+
+# Calculate percentage
+result_df['Percentage'] = (result_df['occurrences'] / result_df.groupby(['hub_city'])['occurrences'].transform('sum')) * 100
+result_df['Percentage'] = result_df['Percentage'].round(2)
+
+# Plot the graph
+ax = sns.barplot(data=result_df, x='Percentage', y='hub_city', hue='store_segment', palette='autumn_r')
+plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+ax.bar_label(ax.containers[0], fontsize=10)
+ax.bar_label(ax.containers[1], fontsize=10)
+plt.ylabel(None)
+plt.title('Proporção GOOD x FOOD por cidade')
+plt.show()
+
+#calculate the frequency of plan store
+n = len(df_lojas)  # df size
+k = np.ceil(1 + 3.322 * np.log10(n))  # number of classes
+sorted_data = np.sort(df_lojas['store_plan_price'].fillna(0))  # sort value ascending
+data_range = np.max(sorted_data) - np.min(sorted_data)  # range of df
+bin_width = np.ceil(data_range / k)  # range of classes
+bins = [np.min(sorted_data) + i * bin_width for i in range(int(k) + 1)]  # limits of classes
+freq = pd.cut(sorted_data, bins=3, right=False).value_counts()  # frequency's table
+freq_df = pd.DataFrame(freq)  # Create DataFrame
+freq_df["Percentage"] = round((freq_df["count"] / n) * 100, 2) #calculate the percentage
+    
+display(freq_df)
+display(pd.DataFrame(df_lojas['store_plan_price'].fillna(0).describe().round(2)).transpose())
+        
+# Plot of the graph
+fig, ax = plt.subplots(figsize=(5,3.5))
+ax.hist(df_lojas['store_plan_price'].fillna(0), bins=3, color="orange", rwidth=0.9)
+plt.show()
+
+
+# calculate frequency distribution
+result_df = df_lojas.groupby(['hub_city', 'hub_name'])['store_id'].count().reset_index()
+result_df.rename(columns={'store_id': 'occurrences'}, inplace=True)
+
+# Calculate percentage
+result_df['Percentage'] = (result_df['occurrences'] / result_df.groupby(['hub_city'])['occurrences'].transform('sum')) * 100
+result_df['Percentage'] = result_df['Percentage'].round(2)
+
+# Filter cities of interest
+cities = ['CURITIBA', 'PORTO ALEGRE', 'SĂO PAULO', 'RIO DE JANEIRO']
+filtered_df = result_df[result_df['hub_city'].isin(cities)]
+
+# display the result for each
+for city in cities:
+    print(colored(f'{city}:', 'blue', attrs=['bold']))
+display(filtered_df[filtered_df['hub_city'] == city].sort_values(by=['occurrences'], ascending=False))
+
+
+#### INFOS ABOUT ORDERS ####
+
+#Create the DataFrames for ploting
+channelName_df = count_by_column(df_pedidos, 'channel_name')
+channelType_df = count_by_column(df_pedidos, 'channel_type')
+status_df = count_by_column(df_pedidos, 'order_status')
+
+# Plot the graphes
+fig = plt.figure(tight_layout=True)
+
+ax1 = plt.subplot(212)
+p = ax1.barh(y=channelName_df['channel_name'].iloc[:5], width=channelName_df['percentage'].iloc[:5], color="C1")
+ax1.set_title('Top 5 Channels')
+ax1.set_xlabel('Percentage')
+ax1.bar_label(p, fontsize=7)
+
+ax2 = plt.subplot(221)
+ax2.bar(x=channelType_df['channel_type'], height=channelType_df['percentage'], color="C1", alpha=0.7)
+ax2.set_title('Type of channel by order')
+ax2.tick_params(axis='x', labelsize=9)
+ax2.set_ylabel('Percentage')
+
+ax3 = plt.subplot(222)
+ax3.bar(x=status_df['order_status'], height=status_df['percentage'], color="C1", alpha=0.5)
+ax3.set_title('Total Order by Status')
+ax3.tick_params(axis='x', labelsize=9)
+
+
+plt.show()
+
+
+#count and calculate the percentage for own channel type
+df = df_pedidos.groupby(['channel_name','channel_type'])['order_id'].count().reset_index()
+df.rename(columns={'order_id': 'occurrences'}, inplace=True)
+df['percentage'] = 100*(df['occurrences'] / df['occurrences'].sum()).round(4)
+print(colored(f'OWN CHANNEL:', 'blue', attrs=['bold']))
+display(df[df['channel_type'] == 'OWN CHANNEL'].sort_values(by='occurrences', ascending=False))
+
+#count and calculate the percentage for marketplace type
+df = df_pedidos.groupby(['channel_name','channel_type'])['order_id'].count().reset_index()
+df.rename(columns={'order_id': 'occurrences'}, inplace=True)
+df['percentage'] = 100*(df['occurrences'] / df['occurrences'].sum()).round(4)
+print(colored(f'MARKETPLACE:', 'blue', attrs=['bold']))
+display(df[df['channel_type'] == 'MARKETPLACE'].sort_values(by='occurrences', ascending=False))
+
+count_columns = ['channel_name', 'channel_type', 'order_status']
+
+for column in count_columns:
+    print(colored(f'{column}:', 'blue', attrs=['bold']))
+display(count_by_column(df_pedidos, column))
+
+
+#Create the DataFrames for graph
+semana_df = count_by_column(df_pedidos, 'dia_semana')
+mes_df = count_by_column(df_pedidos, 'mes_ano')
+
+# Plot the graphs
+fig, axs = plt.subplots(2, 1, tight_layout=True)
+
+# Plot the first bar chart
+axs[0].barh(y=semana_df['dia_semana'], width=semana_df['occurrences'], edgecolor="white", linewidth=0.8, color="C1")
+axs[0].set_title('Pedidos por dia da semana')
+
+# Plot the second bar chart
+axs[1].barh(y=mes_df['mes_ano'], width=mes_df['occurrences'], edgecolor="white", linewidth=0.8, color="C1")
+axs[1].set_title('Pedidos por mês')
+axs[1].set_xlabel('Count')
+
+plt.show()
+
+
+# Sort the DataFrame by the 'mes_ano' column
+df = pd.DataFrame(df_pedidos.groupby('mes_ano')['order_id'].count())
+
+# Calculate the month-over-month change ('otm')
+df['otm'] = df['order_id'].diff()
+
+# Calculate the percentage month-over-month change ('otm')
+df['potm'] = df['order_id'].pct_change().round(2)*100
+
+display(df)
+
+df_pedidos.dropna().describe(include='float64').round(2)
+
+
+columns = ['order_amount', 'order_delivery_fee']
+for column in columns:
+    print(colored(f'{column}:', 'blue', attrs=['bold']))
+    display(freq_column(df_pedidos, column))
+
+# calculate frequency for the varible that need correction with NaN values
+    n = len(df_lojas)  # df size
+    k = np.ceil(1 + 3.322 * np.log10(n))  # number of classes
+    sorted_data = np.sort(df_pedidos['order_delivery_cost'].dropna())  # sort value ascending
+    data_range = np.max(sorted_data) - np.min(sorted_data)  # range of df
+    bin_width = np.ceil(data_range / k)  # range of classes
+    bins = [np.min(sorted_data) + i * bin_width for i in range(int(k) + 1)]  # limits of classes
+    freq = pd.cut(sorted_data, bins=bins, right=False).value_counts()  # frequency's table
+    freq_df = pd.DataFrame(freq)  # Create DataFrame
+    freq_df["Percentage"] = round((freq_df["count"] / n) * 100, 2) #calculate the percentage
+
+print(colored(f'order_delivery_cost:', 'blue', attrs=['bold']))    
+display(freq_df)
+
+
+#Tipo de pagamento
+
+#criando dataFrame com o os tipos de pagamento agredados por valores e número de pedidos
+payments_df = count_by_column(payments, 'payment_method')
+
+#visualização
+fig, ax = plt.subplots(figsize=(4, 4))
+wedges, texts, autotexts = ax.pie(payments_df['percentage'].iloc[:4],
+                                  autopct='%1.1f%%', pctdistance=1.15,
+                                  colors=['darkorange', 'orange', 'peachpuff', 'bisque'])
+ax.legend(wedges, payments_df['payment_method'],
+          title="Type",
+          loc="upper left",
+          bbox_to_anchor=(1, 0, 0.5, 1))
+plt.setp(autotexts, size='x-small',
+         weight="bold", color='black')
+ax.set_title("Payment by Type")
+
+plt.show()
+
+            
+count_columns = ['payment_method', 'payment_status']
+
+for column in count_columns:
+    print(colored(f'{column}:', 'blue', attrs=['bold']))
+    display(count_by_column(payments, column))
+
+
+payments.dropna().describe(include='float64').round(2)
+
+print(colored(f'payment_amount:', 'blue', attrs=['bold']))
+display(freq_column(payments, 'payment_amount'))
+    
+    # calculate frequency for the varible that need correction with NaN values
+n = len(df_lojas)  # df size
+k = np.ceil(1 + 3.322 * np.log10(n))  # number of classes
+sorted_data = np.sort(df_pedidos['order_delivery_cost'].dropna())  # sort value ascending
+data_range = np.max(sorted_data) - np.min(sorted_data)  # range of df
+bin_width = np.ceil(data_range / k)  # range of classes
+bins = [np.min(sorted_data) + i * bin_width for i in range(int(k) + 1)]  # limits of classes
+freq = pd.cut(sorted_data, bins=bins, right=False).value_counts()  # frequency's table
+freq_df = pd.DataFrame(freq)  # Create DataFrame
+freq_df["Percentage"] = round((freq_df["count"] / n) * 100, 2) #calculate the percentage
+print(colored(f'payment_fee:', 'blue', attrs=['bold']))
+display(freq_df)     
+
+
+
+        #### 3.2 TREATING THE DATA ####
+
+# Process the dataframe 'df_pedidos'
+df_todos = (
+    df_pedidos
+    .merge(df_entregas.set_index('delivery_order_id'), on='delivery_order_id')
+    .drop(columns=['delivery_order_id', 'channel_id'])
+)
+
+# Process the dataframe 'df_lojas'
+df_todos = (
+    df_todos
+    .merge(df_lojas.set_index('store_id'), on='store_id')
+    .drop(columns=['store_id', 'delivery_id', 'driver_id'])
+)    
+
+
+#cria plot para mais de uma figura
+fig, axs = plt.subplots(2, 2,figsize=(6, 6),layout='constrained')
+
+#cria os gráficos de boxplot
+axs[0, 0].boxplot(df_todos["order_amount"])
+axs[0, 0].set_title("Order Amount")
+
+axs[0, 1].boxplot(df_todos["delivery_distance_meters"])
+axs[0, 1].set_title("Delivery Distance (m)")
+
+axs[1, 0].boxplot(df_todos["order_delivery_fee"])
+axs[1, 0].set_title("Delivery Fee")
+
+axs[1, 1] = sns.boxplot(df_todos["order_delivery_cost"])
+axs[1, 1].set_title("Delivery Cost")
+
+plt.show()
+
+
+
+###CALCULATING OUTLIERS###
+
+Q1 = df_todos.select_dtypes(include=['float64', 'int64']).quantile(0.25)
+Q3 = df_todos.select_dtypes(include=['float64', 'int64']).quantile(0.75)
+IQR = Q3 - Q1
+print(IQR)
+
+df = df_todos.select_dtypes(include=['float64', 'int64'])
+df1 = df[~((df < (Q1 - 3 * IQR)) |(df > (Q3 + 3 * IQR))).any(axis=1)] #extremo
+df2 = df[~((df < (Q1 - 1.5 * IQR)) |(df > (Q3 + 1.5 * IQR))).any(axis=1)] # moderado e extremo 
+print(f'Sem outliers moderados e extremos: {df2.shape}')
+print(f'Sem outliers extremos: {df1.shape}')
+print(f'Com outliers: {df_todos.shape}')
+
+
+# Define a function to plot histograms
+def plot_histograms(df, title, color):
+    df.select_dtypes(include=['float64']).hist(edgecolor='black', color=color, bins=15, figsize=(10, 5), layout=(2, 3))
+    plt.suptitle(title)
+
+# Plot histograms for the original dataset (with no alterations)
+plot_histograms(df_todos, 'Histograms with Outliers', 'red')
+
+# Plot histograms for the dataset without extreme outliers
+plot_histograms(df1, 'Histograms without Extreme Outliers', 'yellow')
+
+# Plot histograms for the dataset without moderate and extreme outliers
+plot_histograms(df2, 'Histograms without Extreme and Moderate Outliers', 'green')
+
+plt.show()
+
+print("Skewness com outliers: {:0.3f}".format(df_todos["order_amount"].skew()))
+print("Skewness sem outliers extremos: {:0.3f}".format(df1["order_amount"].skew()))
+print("Skewness sem outliers moderados e extremos: {:0.3f}".format(df2["order_amount"].skew()))
+print("Kurtosis com outliers: {:0.3f}".format(df_todos["order_amount"].kurt()))
+print("Kurtosis sem outliers extremos: {:0.3f}".format(df1["order_amount"].kurt()))
+print("Kurtosis sem outliers moderados e extremos: {:0.3f}".format(df2["order_amount"].kurt()))
+
+
+final_df = df2.merge(df_todos, how='left')
+display(final_df.head())
+        
+final_df = final_df.fillna(0)
+print(colored(f'Total de dados faltantes em cada variável: \n ', 'blue', attrs=['bold']))
+display(final_df.isna().sum())    
+
+
+        ### 3.3 ANALYSIS BIVARIED ###
+
+# Charge the dataframe for first graph
+count_df = final_df.groupby(['store_segment'])['order_id'].count().reset_index()
+# Charge the dataframe for second graph
+total_amount_df = final_df.groupby(['store_segment'])['order_amount'].sum().reset_index()
+
+fig, axs = plt.subplots(1,2, figsize=(6.5, 3.5), tight_layout=True)
+
+# Plot the first graph
+
+axs[0].bar(x=count_df['store_segment'], height=count_df['order_id'], color=["darkorange", "orange"])
+axs[0].yaxis.set_major_formatter(lambda height, _: f'{height * 1e-3:.0f}k')
+axs[0].set_ylabel('Count')
+axs[0].set_xlabel('Store Segment')
+axs[0].set_title('Total Order per Segment')
+
+# Plot the second graph
+axs[1].bar(x=total_amount_df['store_segment'], height=total_amount_df['order_amount'], color=["darkorange", "orange"])
+axs[1].yaxis.set_major_formatter(lambda height, _: f'{height * 1e-6:.0f}M$')
+axs[1].set_ylabel('Reais')
+axs[1].set_xlabel('Store Segment')
+axs[1].set_title('Value Amount per Segment')
+plt.show()   
+
+total_amount_df = final_df.groupby(['store_segment'])['order_amount'].sum().reset_index()
+# Calculate total change ('otm')
+total_amount_df['tc'] = total_amount_df['order_amount'].diff()
+
+# Calculate the percentage  change ('otm')
+total_amount_df['ptc'] = total_amount_df['order_amount'].pct_change()
+
+display(total_amount_df)
+
+display(final_df.groupby(['store_segment'])['order_amount'].describe().reset_index())
+
+        
+# adjust the dataset for the analyses
+grouped_df = final_df.groupby(['store_segment', 'store_name'])['order_amount'].sum().reset_index()
+g_df = grouped_df[grouped_df['store_segment'] == "GOOD"].sort_values(by='order_amount', ascending=False).head(10)
+f_df = grouped_df[grouped_df['store_segment'] == "FOOD"].sort_values(by='order_amount', ascending=False).head(10)
+
+# plot the graphs
+fig, axs = plt.subplots(1, 2, tight_layout=True,  figsize=(6.5, 5.5))
+fig.suptitle("Top 10 Stores Total Amount by Segment")
+
+# plot the first bar chart
+axs[0].bar(x=g_df['store_name'], height=g_df['order_amount'], color="orange")
+axs[0].set_title('Good')
+axs[0].tick_params(axis='x', labelrotation=90)
+axs[0].yaxis.set_major_formatter(lambda height, _: f'{height * 1e-4:.0f}k')
+
+# plot the second bar chart
+axs[1].bar(x=f_df['store_name'], height=f_df['order_amount'], color="darkorange")
+axs[1].set_title('Food')
+axs[1].tick_params(axis='x', labelrotation=90)
+axs[1].yaxis.set_major_formatter(lambda height, _: f'{height * 1e-6:.0f}M')
+
+plt.show()
+
+
+grouped_df = final_df.groupby(['store_segment', 'dia_semana', 'mes_ano'])['order_amount'].sum().reset_index()
+gg_df = grouped_df[grouped_df['store_segment']=="GOOD"].sort_values(by='order_amount', ascending=False)
+gf_df = grouped_df[grouped_df['store_segment']=="FOOD"].sort_values(by='order_amount', ascending=False)
+
+
+
+# plot the graphs
+fig, axs = plt.subplots(2, 2, layout='constrained')
+fig.suptitle("Total amount by day of the weekend and month per segment")
+
+# plot the first bar chart
+axs[0,0].barh(y=gg_df['dia_semana'], width=gg_df['order_amount'], color="orange")
+axs[0,0].set_title('Good')
+axs[0,0].xaxis.set_major_formatter(lambda height, _: f'{height * 1e-3:.0f}k$')
+
+# plot the second bar chart
+axs[0,1].barh(y=gf_df['dia_semana'], width=gf_df['order_amount'], color="darkorange")
+axs[0,1].set_title('Food')
+axs[0,1].xaxis.set_major_formatter(lambda height, _: f'{height * 1e-6:.0f}M$')
+
+# plot the third bar chart
+axs[1,0].bar(x=gg_df['mes_ano'], height=gg_df['order_amount'], color='orange')
+axs[1,0].tick_params(axis='x', labelrotation=90)
+axs[1,0].yaxis.set_major_formatter(lambda height, _: f'{height * 1e-3:.0f}k$')
+
+#plot the fourth bar chart
+axs[1,1].bar(x=gf_df['mes_ano'], height=gf_df['order_amount'], color='darkorange')
+axs[1,1].tick_params(axis='x', labelrotation=90)
+axs[1,1].yaxis.set_major_formatter(lambda height, _: f'{height * 0.5e-6:.0f}M$')
+
+plt.show()       
+
+display(grouped_df.pivot(index=['mes_ano','dia_semana'], columns='store_segment', values='order_amount'))
+
+
+
+# Group by store_segment, dia_semana, mes_ano, and data
+grouped_df = final_df.groupby(['store_segment', 'dia_semana', 'mes_ano', 'data'])
+
+# Calculate order counts and order amounts
+g_df = grouped_df['order_id'].count().reset_index()
+g_df2 = grouped_df['order_amount'].sum().reset_index()
+
+# Filter by store_segment
+g_df_good = g_df[g_df['store_segment'] == "GOOD"].sort_values(by='order_id', ascending=True)
+g_df2_good = g_df2[g_df2['store_segment'] == "GOOD"].sort_values(by='order_amount', ascending=True)
+
+g_df_food = g_df[g_df['store_segment'] == "FOOD"].sort_values(by='order_id', ascending=True)
+g_df2_food = g_df2[g_df2['store_segment'] == "FOOD"].sort_values(by='order_amount', ascending=True)
+
+# Create subplots
+fig, axes = plt.subplots(2, 2, figsize=(10, 5), sharex=True)
+
+# Plot order counts
+g_df_good.plot(x='data', y='order_id', ax=axes[0, 0], title='Total amount of order in Good by day',
+               grid=True, color='orange', linewidth=2).set_facecolor('whitesmoke')
+g_df_food.plot(x='data', y='order_id', ax=axes[1, 0], title='Total amount of order in Food by day',
+               grid=True, color='orangered', linewidth=2).set_facecolor('whitesmoke')
+
+# Plot order amounts
+g_df2_good.plot(x='data', y='order_amount', ax=axes[0, 1], title='Total value of orders in Good by day',
+                grid=True, color='orange', linewidth=2).set_facecolor('whitesmoke')
+g_df2_food.plot(x='data', y='order_amount', ax=axes[1, 1], title='Total value of orders in Food by day',
+                grid=True, color='orangered', linewidth=2).set_facecolor('whitesmoke')
+
+# Format y-axis labels for order amounts
+axes[0, 1].yaxis.set_major_formatter(lambda x, _: f'$ {x*1e-3:.0f}k')
+axes[1, 1].yaxis.set_major_formatter(lambda x, _: f'$ {x*1e-3:.0f}k')
+
+# Set x-axis labels and rotation
+axes[1, 1].set_xlabel('Data')
+axes[1, 1].tick_params(axis='x', rotation=90)
+axes[1, 0].set_xlabel('Data')
+axes[1, 0].tick_params(axis='x', rotation=90)
+
+# Adjust layout and display the plot
+fig.tight_layout()
+plt.show()
+
+
+### INFOS ABOUT DELIVERIES ###
+
+#Create the DataFrames for ploting
+grouped_df = final_df.groupby(['store_segment', 'driver_modal', 'driver_type'])['order_id'].count().reset_index()
+good_df = grouped_df[grouped_df['store_segment']=="GOOD"].sort_values(by='order_id', ascending=False)
+food_df = grouped_df[grouped_df['store_segment']=="FOOD"].sort_values(by='order_id', ascending=False)
+
+# Plot the graphes
+fig = plt.figure(tight_layout=True)
+fig.suptitle("Total amount of order divide by segment and driver type ")
+
+ax1 = plt.subplot(212)
+ax1.barh(y=grouped_df['driver_modal'], width=grouped_df['order_id'], color='orangered')
+ax1.set_title('Total amount of orders by driver type')
+ax1.xaxis.set_major_formatter(lambda height, _: f'{height * 1e-3:.0f}k')
+
+ax2 = plt.subplot(222)
+ax2.bar(x=good_df['driver_modal'], height=good_df['order_id'], color="orange")
+ax2.set_title('Good')
+ax2.yaxis.set_major_formatter(lambda height, _: f'{height * 1e-3:.0f}k')
+
+ax3 = plt.subplot(221)
+ax3.bar(x=food_df['driver_modal'], height=food_df['order_id'], color="darkorange")
+ax3.set_title('Food')
+ax3.tick_params(axis='x', labelsize=9)
+ax3.yaxis.set_major_formatter(lambda height, _: f'{height * 1e-3:.0f}k')
+
+plt.show()
+
+
+print('\n Total de pedidos entregues por cada tipo de entregador: \n')
+display(final_df.groupby(['driver_modal'])['order_id'].count().reset_index())
+print('\n Total de pedidospelo tipo de entregador e seu vínculo empregatício: \n')
+display(final_df.groupby(['driver_modal', 'driver_type'])['order_id'].count().reset_index().pivot(index='driver_modal', columns='driver_type', values='order_id'))
+print('\n Total de pedidos por segmento e tipo de entregador \n')
+display(final_df.groupby(['driver_modal', 'store_segment'])['order_id'].count().reset_index().pivot(index='driver_modal', columns='store_segment', values='order_id'))
+print('\n Resumo da distância média percorrida pelo tipo de entregador: \n ')
+display(final_df.groupby(['driver_modal'])['delivery_distance_meters'].describe().reset_index().round(2))
+print('\n Resumo da distância média percorrida pelo segmento: \n ')
+display(final_df.groupby(['store_segment'])['delivery_distance_meters'].describe().reset_index().round(2))
+
+#Make the first dataframe to plot
+# Group by 'hub_city' and 'driver_modal' and count the number of orders
+driver_df = final_df.groupby(['hub_city', 'driver_modal'])['order_id'].agg(order_count='count').reset_index()
+# Calculate the total orders for each hub city
+driver_df['total'] = driver_df.groupby('hub_city')['order_count'].transform('sum')
+# Calculate the percentage of orders for each driver modal
+driver_df['percentage'] = (driver_df['order_count'] / driver_df['total'] * 100).round(2)
+
+#Make the second dataframe to plot
+# Group by 'hub_city' and 'driver_modal' and calculate the mean of 'delivery_distance_meters'
+delivery_distance_df = final_df.groupby(['hub_city', 'driver_modal'])['delivery_distance_meters'].mean().reset_index()
+
+
+# Create a new figure with two subplots
+fig, axs = plt.subplots(1, 2, figsize=(9.5, 5.5))
+
+# Plot the percentage of orders delivered by driver modal per city
+sns.barplot(data=driver_df, x='hub_city', y='percentage', hue='driver_modal', palette='autumn_r', ax=axs[0])
+axs[0].set_ylabel('Percentage')
+axs[0].set_title('Percentage of orders delivered by type of driver per city')
+axs[0].legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+axs[0].bar_label(axs[0].containers[0], fontsize=10)
+axs[0].bar_label(axs[0].containers[1], fontsize=10)
+axs[0].tick_params(axis='x', labelsize=7)
+
+# Plot the average delivery distance for each driver modal in each city
+sns.barplot(data=delivery_distance_df, x='hub_city', y='delivery_distance_meters', hue='driver_modal', palette='autumn_r', ax=axs[1])
+axs[1].set_ylabel('Average Delivery Distance (meters)')
+axs[1].set_title('Average Delivery Distance by type of driver per city')
+axs[1].tick_params(axis='x', labelsize=7)
+
+# Show the combined plot
+plt.tight_layout()
+plt.show()
+
+
+
+print('\n Total de pedidos por cidade e tipo de entregador e sua porcentagem: \n')
+display(driver_df.pivot_table(index='hub_city', columns='driver_modal', values=['order_count', 'percentage']))
+print('\n Distância média por cidade e tipo de entregador: \n')
+display(delivery_distance_df.pivot(index='hub_city', columns='driver_modal', values='delivery_distance_meters').round(2))
+
+
+
+# Bring back metrics of KPI in logistic 
+metric_df = orders[['order_id', 'order_metric_transit_time', 'order_metric_cycle_time']]
+metric_df = final_df.merge(metric_df.set_index('order_id'), on='order_id')
+metric_df = metric_df.dropna()
+
+# Extract the outliers from the metrics
+# Calculate the box (IQR)
+metric_df_Q1 = metric_df.select_dtypes(include=['float64', 'int64']).quantile(0.25)
+metric_df_Q3 = metric_df.select_dtypes(include=['float64', 'int64']).quantile(0.75)
+metric_df_IQR = metric_df_Q3 - metric_df_Q1
+
+# Drop the columns with extreme outliers
+df = metric_df.select_dtypes(include=['float64', 'int64'])
+metric_df1 = df[~((df < (metric_df_Q1 - 3 * metric_df_IQR)) |(df > (metric_df_Q3 + 3 * metric_df_IQR))).any(axis=1)]  # Extreme outliers
+
+# Consolidate the metrics in a final DataFrame
+metric_final_df = metric_df1.merge(metric_df, how='left')
+
+
+metrics = metric_final_df.groupby(['driver_modal', 'store_segment'])[
+    ['order_metric_transit_time', 'order_metric_cycle_time']
+    ].mean().reset_index().round(2)
+
+fig, axs = plt.subplots(1, 2, figsize=(8, 4.5))
+sns.barplot(
+    data=metrics,
+    x="driver_modal", y="order_metric_transit_time", hue="store_segment",
+    palette="autumn", ax=axs[0]
+)
+axs[0].set_ylabel('Transit Time Metric')
+axs[0].set_title('Transit Time Metric by driver modal and store segment', fontsize=10)
+axs[0].legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+
+#plot the second graph
+sns.barplot(
+    data=metrics,
+    x="driver_modal", y="order_metric_cycle_time", hue="store_segment",
+    palette="autumn", ax=axs[1]
+)
+axs[1].set_ylabel('Cycle Time Metric')
+axs[1].set_title('Cycle Time Metric by driver modal and store segment', fontsize=10)
+
+plt.tight_layout()
+plt.show()
+
+
+display(metrics.groupby(['driver_modal'])[['order_metric_transit_time', 'order_metric_cycle_time']].mean().reset_index())
+display(metrics.pivot(index='driver_modal', columns='store_segment', values=['order_metric_transit_time', 'order_metric_cycle_time']))
+display(metric_final_df.groupby(['driver_modal', 'hub_city'])[
+    ['order_metric_transit_time', 'order_metric_cycle_time']
+    ].mean().reset_index().round(2))      
+
+
+### INFOS PER CITIES ###
+
+print('Tipo de canal de venda por cidade:\n')
+channel_type_df = final_df.groupby(['hub_city', 'channel_type'])['order_id'].count().reset_index()
+display(channel_type_df)
+print('\nTipo de modal do entregador por cidade:\n')
+modal_driver_df = final_df.groupby(['hub_city', 'driver_modal'])['order_id'].count().reset_index()
+display(modal_driver_df)
+
+hub_delivery_distance_df = final_df.groupby(['hub_city', 'hub_name', 'driver_modal'])['delivery_distance_meters'].mean().reset_index()
+hub_delivery_distance_df = hub_delivery_distance_df.pivot(index=['hub_city' ,'hub_name'], columns='driver_modal', values='delivery_distance_meters').round(2)
+hub_delivery_distance_df.plot(kind='bar', figsize=(10,6))
+plt.show()   
+
+
+# Group by specified columns and calculate mean distance and order count
+grouped_data = final_df.groupby(['hub_city', 'hub_name', 'driver_modal']).agg(
+    mean_distance=pd.NamedAgg(column='delivery_distance_meters', aggfunc='mean'),
+    order_count=pd.NamedAgg(column='order_id', aggfunc='count')
+).round(2).reset_index()
+
+# Display top 10 rows for BIKER
+print("\nMaior distância média:\n")
+filtered_biker = grouped_data[grouped_data['driver_modal'] == 'BIKER'].sort_values(by='mean_distance').head(10)
+display(filtered_biker)
+
+# Display bottom 10 rows for BIKER
+print("\nMenor distância média:\n")
+filtered_biker = grouped_data[grouped_data['driver_modal'] == 'BIKER'].sort_values(by='mean_distance', ascending=False).head(10)
+display(filtered_biker)
+
+# Display bottom 10 rows with highest total deliveries for BIKER
+print("\nMaior número de entregas totais:\n")
+filtered_biker_highest_deliveries = grouped_data[grouped_data['driver_modal'] == 'BIKER'].sort_values(by='order_count', ascending=False).head(10)
+display(filtered_biker_highest_deliveries)
+
+# Display top 10 rows with lowest total deliveries for BIKER
+print("\nMenor número de entregas totais:\n")
+filtered_biker_lowest_deliveries = grouped_data[grouped_data['driver_modal'] == 'BIKER'].sort_values(by='order_count').head(10)
+display(filtered_biker_lowest_deliveries)      
+
+
+
+# Display top 10 rows for MOTOBOY
+print("\nMaior distância média:\n")
+filtered_biker = grouped_data[grouped_data['driver_modal'] == 'MOTOBOY'].sort_values(by='mean_distance').head(10)
+display(filtered_biker)
+
+# Display bottom 10 rows for MOTOBOY
+print("\nMenor distância média:\n")
+filtered_biker = grouped_data[grouped_data['driver_modal'] == 'MOTOBOY'].sort_values(by='mean_distance', ascending=False).head(10)
+display(filtered_biker)
+
+# Display bottom 10 rows with highest total deliveries for MOTOBOY
+print("\nMaior número de entregas totais:\n")
+filtered_biker_highest_deliveries = grouped_data[grouped_data['driver_modal'] == 'MOTOBOY'].sort_values(by='order_count', ascending=False).head(10)
+display(filtered_biker_highest_deliveries)
+
+# Display top 10 rows with lowest total deliveries for MOTOBOY
+print("\nMenor número de entregas totais:\n")
+filtered_biker_lowest_deliveries = grouped_data[grouped_data['driver_modal'] == 'MOTOBOY'].sort_values(by='order_count').head(10)
+display(filtered_biker_lowest_deliveries)   
+
+
+top_count_df = final_df.groupby(['hub_city', 'hub_name'])['order_id'].count().reset_index()
+top_count_df.rename(columns={'order_id': 'occurrences'}, inplace=True)
+top_count_df['percentage'] = 100*(top_count_df['occurrences'] / top_count_df['occurrences'].sum()).round(4)
+top_count_df = top_count_df.sort_values(by='occurrences', ascending=False)[:10]
+# Plot the graphs
+fig, ax = plt.subplots()
+
+# Plot the first bar chart
+ax.barh(y=top_count_df['hub_name'], width=top_count_df['occurrences'], edgecolor="white", linewidth=0.8, color="darkorange")
+ax.set_title('Top 10 hub por quantidade de pedidos')
+ax.xaxis.set_major_formatter(lambda height, _: f'{height * 1e-3:.0f}m')
+plt.show()
+
+
+value_top_df = final_df.groupby(['hub_city', 'hub_name'])['order_amount'].sum().reset_index()
+value_top_df.rename(columns={'order_amount': 'Total amount'}, inplace=True)
+value_top_df['percentage'] = 100*(value_top_df['Total amount'] / value_top_df['Total amount'].sum()).round(4)
+value_top_df = value_top_df.sort_values(by='Total amount', ascending=False)[:10]
+
+# Plot the graphs
+fig, ax = plt.subplots()
+
+# Plot the first bar chart
+ax.barh(y=value_top_df['hub_name'], width=value_top_df['Total amount'], edgecolor="white", linewidth=0.8, color="darkorange")
+ax.set_title('Top 10 hub por valores somados dos pedidos')
+ax.xaxis.set_major_formatter(lambda height, _: f'{height * 1e-6}M')
+plt.show()     
+
+
+display(final_df.groupby(['hub_city','hub_name'])['delivery_distance_meters'].describe().reset_index().round(2))
+# group by city and order status
+grouped_df = final_df.groupby(['hub_city', 'order_status'])['order_id'].count().reset_index()
+
+# pivot the table to get separate columns for finished and canceled orders
+pivot_df = grouped_df.pivot(index='hub_city', columns='order_status', values='order_id').fillna(0)
+
+# calculate total occurrences and percentages
+pivot_df['Total Orders'] = pivot_df['FINISHED'] + pivot_df['CANCELED']
+pivot_df['Percentage Finished'] = 100 * (pivot_df['FINISHED'] / pivot_df['Total Orders']).round(4)
+pivot_df['Percentage Canceled'] = 100 * (pivot_df['CANCELED'] / pivot_df['Total Orders']).round(4)
+
+# display the result
+print('Taxa de cancelamento por cidade:\n')
+display(pivot_df[['FINISHED', 'CANCELED', 'Percentage Finished', 'Percentage Canceled']])
