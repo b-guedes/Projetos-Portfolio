@@ -1,0 +1,74 @@
+#load packages
+
+from termcolor import colored
+import pandas as pd
+import numpy as np
+import datetime
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+#load some functions
+
+def missing_data(data):
+    """
+    Calculates information about missing data in a DataFrame.
+
+    Args:
+        data (pd.DataFrame): The input DataFrame.
+
+    Returns:
+        pd.DataFrame: A summary of missing data including total count, unique values,
+                      null count, and percentage of missing values.
+    """
+    total = data.count()
+    unique = data.nunique()
+    null = data.isnull().sum()
+    percent = round((data.isnull().sum() / data.isnull().count() * 100), 2)
+    tt = pd.concat([total, unique, null, percent], axis=1, keys=['Total', 'Unique', 'Null', 'Percent'])
+    types = []
+    for col in data.columns:
+        dtype = str(data[col].dtype)
+        types.append(dtype)
+    tt['Types'] = types
+    return tt.transpose()
+
+
+def count_by_column(df, count_column):
+    """
+    Counts occurrences of values and calculates the percentage in the specified count_column.
+
+    Args:
+        df (pandas.DataFrame): The input DataFrame.
+        count_column (str): Column name for counting occurrences.
+
+    Returns:
+        pandas.DataFrame: A DataFrame with count of occurrences and percentage.
+    """
+    count = df[count_column].value_counts().reset_index()
+    count.columns = [count_column, 'occurrences']  # Rename the columns for clarity
+    count['percentage'] = round(100 * (count['occurrences'] / count['occurrences'].sum()), 2)
+    return count
+
+
+
+def freq_column(df, column):
+    """
+    Calculate the frequency distribution of a column in a DataFrame.
+
+    Args:
+        df (pd.DataFrame): The input DataFrame.
+        column (str): The name of the column to analyze.
+
+    Returns:
+        pd.Series: A Series containing the frequency distribution.
+    """
+    n = len(df) #df size
+    k = np.ceil(1 + 3.322 * np.log10(n)) #number of classes
+    sorted_data = np.sort(df[column]) #sort value ascending
+    data_range = np.max(sorted_data) - np.min(sorted_data) #range of df
+    bin_width = np.ceil(data_range / k) #range of classes
+    bins = [np.min(sorted_data) + i * bin_width for i in range(int(k) + 1)] #limits of classes
+    freq = pd.cut(sorted_data, bins=bins, right=False).value_counts() #frequency's table
+    freq_df = pd.DataFrame(freq)
+    freq_df["Percentage"] = round((freq_df["count"] / n) * 100, 2)
+    return freq_df
