@@ -108,5 +108,3 @@ Se configurado, o robô reporta ao Maestro:
 O projeto está estruturado para expansão. Sugestões de melhoria, novas integrações (transportadoras ou APIs) ou adaptações para outros fluxos logísticos são bem-vindas.
 
 ---
-
-Desenvolvido com 💻 e 🧠 para automação inteligente de processos logísticos.
