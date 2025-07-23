@@ -1,16 +1,15 @@
 # 🧠 Clínica Escola de Psicologia – Sistema Integrado de Gestão
 
-Este projeto é uma solução tecnológica para gerenciamento de atendimentos clínicos em uma clínica-escola de psicologia. Ele integra **Google Forms**, **Google Sheets**, **Google Apps Script** e **MySQL**, permitindo o registro automatizado de pacientes, estudantes, coordenadores, atendimentos e consultas.
+Este projeto foi desenvolvido para **uso interno e administrativo** de uma Clínica Escola em Psicologia, com o objetivo de digitalizar, organizar e centralizar os fluxos de atendimento, supervisão e registros institucionais. Ele substitui o uso de planilhas manuais por uma solução integrada entre **formulários**, **scripts automatizados** e **banco de dados relacional**, promovendo mais controle, segurança e eficiência. Ele integra **Google Forms**, **Google Sheets**, **Google Apps Script** e **MySQL**, permitindo o registro automatizado de pacientes, estudantes, coordenadores e atendimentos.
 
 ---
 
 ## 🛠 Tecnologias Utilizadas
 
-- **Google Sheets & Forms** — Coleta de dados por meio de formulários
-- **Google Apps Script** — Processamento automático, triggers e inserção no banco de dados
-- **MySQL** — Armazenamento estruturado e relacional dos dados
-- **Landing Page** — Interface pública para apresentação: [Acesse aqui](https://clinica-escola-landingpage.netlify.app/)
-
+- **Google Sheets & Google Forms** — Interfaces de coleta de dados.
+- **Google Apps Script** — Automatização de cadastros, triggers e integração com o banco de dados.
+- **MySQL** — Armazenamento relacional dos dados clínicos e acadêmicos.
+- **Landing Page Institucional** — Interface para usuários internos: [Acesse aqui](https://clinica-escola-landingpage.netlify.app/)
 ---
 
 ## 📁 Estrutura do Repositório
@@ -45,18 +44,30 @@ sistema-gestao-clinica-escola/
 
 ## 🔧 Funcionalidades
 
-- 📝 Cadastro automatizado de:
+- 📝 **Cadastro automatizado de**:
   - Pacientes
   - Estudantes
   - Coordenadores
-- 📆 Agendamento de consultas com:
+
+- 📆 **Agendamento de consultas com**:
   - Registro de presença
-  - Prontuário
+  - Prontuário clínico-acadêmico
   - Controle de faltas
-- 🔗 Associação entre pacientes e estudantes com histórico de atendimentos
-- 🗂️ Sistema de logging em arquivos no Google Drive
-- 🔌 Integração com banco de dados relacional via JDBC
-- 🧩 Modularização de scripts e funções auxiliares
+
+- 🔗 **Associação de atendimento**:
+  - Vínculo entre estudante e paciente
+  - Histórico clínico consolidado
+
+- 🗂️ **Sistema de logging**:
+  - Geração de arquivos no Google Drive para rastreabilidade e auditoria interna
+
+- 🔌 **Integração via JDBC com MySQL**:
+  - Envio automatizado de registros para banco relacional
+  - Compatível com autenticação segura e estrutura escalável
+
+- 🧩 **Scripts modulares**:
+  - Separação por responsabilidade
+  - Facilidade para manutenção e expansão do sistema
 
 ---
 
@@ -77,7 +88,7 @@ sistema-gestao-clinica-escola/
    - Crie um projeto de Apps Script vinculado ao seu Google Sheets.
    - Importe os scripts da pasta [`apps_script/`](apps_script/).
    - Configure os triggers `onFormSubmit` para cada formulário.
-   - Adicione o ID da pasta do Drive ao script [`criarLog.js`](apps_script/criarLog.js).
+   - Adicione o ID da pasta do Drive ao script [`criarLog.js`](apps_script/criarLogs.js).
 
 3. **Testar os fluxos de cadastro e atendimento**  
    Use os formulários para simular o preenchimento de dados.
@@ -99,4 +110,4 @@ Em caso de dúvidas, sugestões ou contribuições, sinta-se à vontade para abr
 
 ## 🌟 Melhorias Futuras
 
-- Dashboard interativo com gráficos de atendimento
+- Integração com dashboards interativos e relatórios analíticos (Looker Studio)
