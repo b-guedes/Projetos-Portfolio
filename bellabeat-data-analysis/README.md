@@ -16,7 +16,9 @@ Para este projeto, optei por uma abordagem de alta performance e visualização 
 
 ## 📉 Visão Geral (Big Numbers)
 
-> **Usuários Analisados:** 35 | **Média de Passos:** 7.637 | **Média Min. Sedentários:** 991min | **Retenção de Sono:** 36%
+> **Usuários Analisados:** 35 | **Média de Passos:** 7.996 | **Horário de maior atividade:** 19h
+> 
+> **Média Tempo de Sono:** 7h | **Média Tempo Ativo:** 4h | **Média Tempo Sedentário:** 12h
 
 ---
 
@@ -29,20 +31,22 @@ Não olhamos apenas para a média. Dividimos os usuários com base na intensidad
 *   **Moderados:** Predominância de atividades de intensidade leve.
 *   **Intensos:** Foco em atividades de moderada a alta intensidade.
 
-![Scatter Plot - Segmentação de Perfis](caminho/para/seu/grafico_scatter.png)
+![Scatter Plot - Segmentação de Perfis](imagens/grafico_segmentacao_scatter.png)
 
 ### 2. A Relação entre Atividade e Sono
 Cruzamos os perfis com a **eficiência do sono**. A análise revelou que o tempo de inatividade é um preditor direto da qualidade do descanso: **Quanto menor o tempo sedentário, melhor a qualidade do sono em todos os grupos.**
 
-![Boxplot - Sedentarismo vs Sono](caminho/para/seu/grafico_boxplot.png)
+![Boxplot - Sedentarismo vs Sono](imagens/grafico_correlacao_sono_boxplot.png)
 
 ### 3. Padrões de Horários e Intensidade
 Mapeamos quando cada perfil está mais propenso a agir. Note os picos de intensidade:
-- **Intensos:** 4 picos definidos (05h, 08h, 14h e 19h).
+- **Intensos:** 3 picos definidos (05-08h, 12-14h e 17-19h).
 - **Moderados:** Atividade concentrada às 09h e 18h.
 - **Sedentários:** Atividade constante, sem picos de esforço.
 
-![Heatmap - Atividade por Horário](caminho/para/seu/grafico_heatmap.png)
+![Line - Intensidade da Atividade por Horário](imagens/grafico_horarioIntensidade_linha.png)
+
+![Heatmap - Atividade por Horário](imagens/grafico_horariosUso_heatmap.png)
 
 ---
 
