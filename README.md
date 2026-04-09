@@ -1,62 +1,61 @@
-<img src="https://www.sgcfinance.nl/wp-content/uploads/2020/04/SGC-Infographic-Elementen-Finance-Inhoud-1-min.png" alt="ilustração de um computador" width="400px" align="right">
-
-<h1 align="left">Olá, eu sou o Bruno! 👋</h1>
-<p align="left"><i>Vivendo por dados, tenho como foco transformar informação em estratégia.</i></p>
-
----
-
-<h2>🧠 Sobre mim</h2>
+# Olá, eu sou o Bruno Guedes! 👋
 
 <p align="left">
-  💼 Atualmente trabalhando em projetos de análise de dados, ciência de dados e automação.<br>
-  📚 Estudando Ciência de dados e iniciando no R para ampliar minha caixa de ferramentas analíticas.<br>
-  🚀 Apaixonado por traduzir números em histórias e apoiar decisões com base em dados.<br>
-  🎯 Em busca de uma posição como Cientista de Dados.
+  <img src="https://img.shields.io/badge/Status-Em%20Busca%20de%20Oportunidades-green?style=flat-square">
+  <img src="https://img.shields.io/badge/Foco-Ciência%20de%20Dados%20%26%20RPA-blue?style=flat-square">
 </p>
 
----
+> **"Transformando dados brutos em inteligência estratégica e processos manuais em fluxos eficientes."**
 
-<h2>📄 Resumo profissional</h2>
-
-<p align="justify">
-  Busco uma oportunidade na área de dados para aplicar e aprimorar minhas habilidades em análise e interpretação de dados, contribuindo para insights estratégicos. Tenho ampla experiência em pesquisa social, com foco em análise socioeconômica e políticas públicas. Já atuei em setores públicos, universidades e empresas privadas.<br><br>
-  Domino ferramentas como Python, SQL, Power BI, Looker Studio e Excel. Valorizo o trabalho em equipe e tenho facilidade em comunicar dados para públicos diversos.
-</p>
+Sou um profissional em transição para **Ciência de Dados**, com sólida bagagem em Ciências Sociais (Mestrado pela PUCRS) e expertise técnica em **Python, SQL e Automação (RPA)**. Minha trajetória é marcada pela união entre o pensamento crítico acadêmico e a resolução de problemas práticos através da tecnologia.
 
 ---
 
-<h2>🛠️ Ferramentas e Tecnologias</h2>
+### 🛠️ No que eu trabalho:
 
-<div align="left">
-  <img src="https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white&style=for-the-badge" height="40" />
-  <img src="https://img.shields.io/badge/MySQL-4479A1?logo=mysql&logoColor=white&style=for-the-badge" height="40" />
-  <img src="https://img.shields.io/badge/Jupyter-F37626?logo=jupyter&logoColor=black&style=for-the-badge" height="40" />
-  <img src="https://img.shields.io/badge/Visual Studio Code-007ACC?logo=visualstudiocode&logoColor=white&style=for-the-badge" height="40" />
-  <img src="https://img.shields.io/badge/pandas-150458?logo=pandas&logoColor=white&style=for-the-badge" height="40" />
-  <img src="https://img.shields.io/badge/NumPy-013243?logo=numpy&logoColor=white&style=for-the-badge" height="40" />
-  <img src="https://img.shields.io/badge/Selenium-43B02A?logo=selenium&logoColor=black&style=for-the-badge" height="40" />
-</div>
-
-<!--
----
-
-<h2>📊 Projetos em destaque</h2>
-
-<ul>
-  <li><a href="#">Análise de Políticas Públicas</a> — Exploração de dados governamentais com Python e Power BI</li>
-  <li><a href="#">Dashboard de Indicadores Socioeconômicos</a> — Visualizações criadas com Looker Studio</li>
-</ul>
--->
+- **Análise de Dados:** Criação de dashboards (Power BI/Looker) e análise estatística para suporte à decisão.
+- **Automação (RPA):** Desenvolvimento de robôs (Python, Automation Anywhere) que reduzem o tempo de tarefas repetitivas.
+- **Engenharia de Dados:** Extração via Web Scraping, integração de APIs e modelagem em SQL (BigQuery/MySQL).
 
 ---
 
-<h2>📬 Contato</h2>
+### 🚀 Tecnologias e Ferramentas
 
-<div align="left">
+| Categoria | Tecnologias |
+| :--- | :--- |
+| **Linguagens** | Python (Pandas, Polars, NumPy, Scikit-Learn), SQL, R (Estudando), JavaScript |
+| **Automação** | Automation Anywhere (A360), Selenium, BotCity, Apps Script |
+| **Visualização** | Power BI, Looker Studio, Matplotlib, Seaborn |
+| **Cloud & DevOps** | AWS (Certified Cloud Practitioner), Git, GitHub, BigQuery |
+
+---
+
+### 📊 Projetos em Destaque
+
+#### 🤖 [Automação de Cotação de Fretes (Correios & Jadlog)](https://github.com/b-guedes/projeto-rpa-cotacaoFretes)
+Sistema de RPA que automatiza a simulação de fretes, gera relatórios comparativos em Excel e integra-se ao BotCity Maestro. 
+*   **Impacto:** Redução drástica de trabalho manual e erro humano na logística.
+*   **Tech:** Python, Selenium, BotCity, Pandas.
+
+#### 🏥 [Sistema Integrado de Gestão - Clínica Escola](https://github.com/b-guedes/projeto-dataEng-clinica)
+Ecossistema digital para centralizar registros de atendimentos psicológicos, substituindo processos físicos e planilhas isoladas.
+*   **Impacto:** Digitalização 100% dos fluxos e rastreabilidade em tempo real.
+*   **Tech:** Google Apps Script, MySQL, Google Workspace API.
+
+#### 📈 [Estudo de Caso Bellabeat (Google Data Analytics)](https://github.com/b-guedes/projeto-dataAnalysis-bellabeat)
+Análise de dados de dispositivos wearables (FitBit) para identificar tendências de saúde e propor estratégias de marketing.
+*   **Impacto:** Insights baseados em dados para posicionamento de marca high-tech feminina.
+*   **Tech:** Python, Polars, API.
+
+---
+
+### 📫 Vamos nos conectar?
+
+<p align="left">
   <a href="https://www.linkedin.com/in/bruno-guedes-f/" target="_blank">
-    <img src="https://raw.githubusercontent.com/maurodesouza/profile-readme-generator/master/src/assets/icons/social/linkedin/default.svg" width="52" height="40" alt="linkedin logo" />
+    <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white">
   </a>
-  <a href="mailto:bguedesf@outlook.com" target="_blank">
-    <img src="https://raw.githubusercontent.com/maurodesouza/profile-readme-generator/master/src/assets/icons/social/microsoft-outlook/default.svg" width="52" height="40" alt="email logo" />
+  <a href="mailto:bguedesf@outlook.com">
+    <img src="https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white">
   </a>
-</div>
+</p>
